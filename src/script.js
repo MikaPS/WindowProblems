@@ -5,7 +5,76 @@ class Introduction extends Phaser.Scene {
 
   preload() {}
 
+  airDropObjects(maxX, maxY) {
+    let x = Math.random() * maxX;
+    let y = Math.random() * maxY;
+    let side = Math.random() * 8;
+    this.matter.add.polygon(x, y, side, maxX * 0.03 + maxY * 0.03);
+  }
+
+  crashingObjects(maxX, maxY) {
+    let gridSize = parseInt((maxX + maxY) / 250);
+    // console.log(gridSize);
+    let maxAllowed = 2;
+
+    let areaWidth = maxX / gridSize;
+    let areaHeight = maxY / gridSize;
+
+    // Iterate through each grid cell
+    for (let i = 0; i < gridSize; i++) {
+      for (let j = 0; j < gridSize; j++) {
+        this.graphics.strokeRect(
+          areaWidth * i,
+          areaHeight * j,
+          areaWidth,
+          areaHeight
+        );
+        let count = 0;
+
+        // Iterate through all bodies in the world
+        for (let k = 0; k < this.matter.world.localWorld.bodies.length; k++) {
+          let body = this.matter.world.localWorld.bodies[k];
+
+          // Calculate distance between body and center point
+          // console.log(body.position.x, areaWidth, i);
+          if (
+            body.position.x > areaWidth * i &&
+            body.position.x < areaWidth * i + areaWidth &&
+            body.position.y > areaHeight * j &&
+            body.position.y < areaHeight * j + areaHeight
+          ) {
+            count++;
+          }
+        }
+
+        // Check if the actual count exceeds the maximum allowed
+        if (count >= maxAllowed) {
+          for (let k = 0; k < this.matter.world.localWorld.bodies.length; k++) {
+            let body = this.matter.world.localWorld.bodies[k];
+
+            if (
+              body.position.x > areaWidth * i &&
+              body.position.x < areaWidth * i + areaWidth &&
+              body.position.y > areaHeight * j &&
+              body.position.y < areaHeight * j + areaHeight
+            ) {
+              if (body != this.ground) {
+                this.matter.world.remove(body);
+              }
+            }
+          }
+
+          return true;
+        }
+      }
+    }
+    return false;
+  }
+
   create() {
+    this.graphics = this.add.graphics();
+    this.crashingObjects(800, 600);
+
     // Create Matter physics world
     this.matter.world.setBounds(0, 0, 800, 600);
 
@@ -20,65 +89,21 @@ class Introduction extends Phaser.Scene {
     // adding random boxes to the scene
     let box1 = this.matter.add.rectangle(300, 450, 50, 50);
     let box2 = this.matter.add.rectangle(500, 450, 50, 50);
-    let ground = this.matter.add.rectangle(395, 600, 815, 50, {
+    // this.world = this.matter.world;
+
+    this.ground = this.matter.add.rectangle(395, 600, 815, 50, {
       isStatic: true,
       render: { fillStyle: "#060a19" },
     });
+    this.matter.add.mouseSpring();
 
     // LEFT CLICK THROWING MECHANIC
-    let rockOptions = { density: 0.004 };
-    let rock = this.matter.add.polygon(170, 450, 8, 20, rockOptions);
-    let anchor = this.matter.add.rectangle(170, 450, 5, 5, { isStatic: true });
-    // gives the elastic effect
-    let elastic = this.matter.add.constraint(anchor, rock, 0.01, 0.01);
-    this.matter.add.mouseSpring();
     this.input.on(
       "pointerdown",
-      function (pointer) {
+      function (pointer, event) {
         if (pointer.leftButtonDown()) {
-          let throwDistance = 20;
-          if (
-            Phaser.Math.Distance.Between(
-              rock.position.x,
-              rock.position.y,
-              pointer.x,
-              pointer.y
-            ) < throwDistance
-          ) {
-            // find the correct direction for explosion
-            this.directionX = rock.position.x - pointer.x;
-            this.directionY = rock.position.y - pointer.y;
-            if (this.directionX < 0) {
-              this.directionX = -0.1;
-            } else {
-              this.directionX = 0.1;
-            }
-            if (this.directionY < 0) {
-              this.directionY = -0.1;
-            } else {
-              this.directionY = 0.1;
-            }
-          }
-        }
-      },
-      this
-    );
-
-    this.input.on(
-      "pointerup",
-      function (pointer) {
-        if (pointer.leftButtonReleased()) {
-          let dx = rock.position.x - anchor.position.x;
-          let dy = rock.position.y - anchor.position.y;
-          let constraintLength = Math.sqrt(dx * dx + dy * dy) / 30;
-
-          console.log("here", constraintLength);
-          let newRock = this.matter.add.polygon(170, 450, 8, 20, rockOptions);
-          // Apply force to the body
-          this.matter.applyForce(newRock, {
-            x: this.directionX * constraintLength,
-            y: this.directionY * constraintLength,
-          });
+          this.crashingObjects(800, 600);
+          this.airDropObjects(800, 400);
         }
       },
       this
@@ -130,7 +155,10 @@ class Introduction extends Phaser.Scene {
     );
   }
 
-  update() {}
+  update() {
+    // this.crashingObjects(800, 600);
+  }
+  // Function to apply force away from the center of mass of the target body
 }
 
 const config = {
