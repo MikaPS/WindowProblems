@@ -13,30 +13,28 @@ class Introduction extends Phaser.Scene {
   }
 
   crashingObjects(maxX, maxY) {
-    let gridSize = parseInt((maxX + maxY) / 250);
-    // console.log(gridSize);
-    let maxAllowed = 2;
-
+    let gridSize = 4;
+    let maxAllowed = 3;
     let areaWidth = maxX / gridSize;
     let areaHeight = maxY / gridSize;
 
-    // Iterate through each grid cell
+    // go through each grid cell
     for (let i = 0; i < gridSize; i++) {
       for (let j = 0; j < gridSize; j++) {
+        // draws the grid (FOR DEBUGGING)
         this.graphics.strokeRect(
           areaWidth * i,
           areaHeight * j,
           areaWidth,
           areaHeight
         );
+
         let count = 0;
 
-        // Iterate through all bodies in the world
+        // go through all bodies in the world
         for (let k = 0; k < this.matter.world.localWorld.bodies.length; k++) {
           let body = this.matter.world.localWorld.bodies[k];
-
-          // Calculate distance between body and center point
-          // console.log(body.position.x, areaWidth, i);
+          // check if it's in a specific area and add it to a count
           if (
             body.position.x > areaWidth * i &&
             body.position.x < areaWidth * i + areaWidth &&
@@ -47,11 +45,11 @@ class Introduction extends Phaser.Scene {
           }
         }
 
-        // Check if the actual count exceeds the maximum allowed
+        // check if there are too many bodies
         if (count >= maxAllowed) {
           for (let k = 0; k < this.matter.world.localWorld.bodies.length; k++) {
             let body = this.matter.world.localWorld.bodies[k];
-
+            // delete all the over crowding bodies
             if (
               body.position.x > areaWidth * i &&
               body.position.x < areaWidth * i + areaWidth &&
@@ -72,10 +70,7 @@ class Introduction extends Phaser.Scene {
   }
 
   create() {
-    this.graphics = this.add.graphics();
-    this.crashingObjects(800, 600);
-
-    // Create Matter physics world
+    this.graphics = this.add.graphics(); // only to draw the grid
     this.matter.world.setBounds(0, 0, 800, 600);
 
     this.add
@@ -89,21 +84,21 @@ class Introduction extends Phaser.Scene {
     // adding random boxes to the scene
     let box1 = this.matter.add.rectangle(300, 450, 50, 50);
     let box2 = this.matter.add.rectangle(500, 450, 50, 50);
-    // this.world = this.matter.world;
-
     this.ground = this.matter.add.rectangle(395, 600, 815, 50, {
       isStatic: true,
       render: { fillStyle: "#060a19" },
     });
+
+    // mouse movements
     this.matter.add.mouseSpring();
 
-    // LEFT CLICK THROWING MECHANIC
+    // SPAWN STUFF
     this.input.on(
       "pointerdown",
       function (pointer, event) {
         if (pointer.leftButtonDown()) {
           this.crashingObjects(800, 600);
-          this.airDropObjects(800, 400);
+          this.airDropObjects(800, 600);
         }
       },
       this
@@ -155,10 +150,7 @@ class Introduction extends Phaser.Scene {
     );
   }
 
-  update() {
-    // this.crashingObjects(800, 600);
-  }
-  // Function to apply force away from the center of mass of the target body
+  update() {}
 }
 
 const config = {
