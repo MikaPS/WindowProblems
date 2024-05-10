@@ -4,10 +4,31 @@ class Game extends Phaser.Scene {
   }
 
   preload() {
-    this.load.image("background", "assets/img/sample.jpg");
+    //Used from https://www.deviantart.com/rawen713/art/Graph-Paper-150326645
+    this.load.image("background", "assets/img/graphpaper_background.jpg");
   }
 
   create() {
+    /*
+    Tried working on Matter.js
+    const Engine = Matter.Engine,
+    Render = Matter.Render,
+    World = Matter.World,
+    Bodies = Matter.Bodies;
+
+    // create an engine
+    const engine = Engine.create();
+
+    var render = Render.create({
+      element: document.body,
+      engine: engine,
+      options: {
+        width: window.innerWidth,
+        height: window.innerHeight,
+        wireframes: false
+      }
+    });
+    */
     // window physics by lyssa
     game.settings = { centerX: 0, centerY: 0 }; // for centering camera later
     this.add.image(0, 0, "background").setOrigin(0); // sample background image
@@ -149,7 +170,12 @@ class Game extends Phaser.Scene {
     let size = game.config.width / 50 + game.config.height / 50;
     let x = Math.random() * (endX - startX) + startX;
     let y = Math.random() * (endY - startY) + startY;
-    this.matter.add.polygon(x, y, side, size);
+    this.matter.add.polygon(x, y, side, size /*, {
+      render: {
+        strokeStyle: 'black',
+        lineWidth: 4
+      }
+    }*/);
   }
 
   crashingObjects(maxX, maxY) {
