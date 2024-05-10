@@ -20,9 +20,7 @@ class Game extends Phaser.Scene {
 			this.updateSize.bind(this)();
 		};
 		$(window).resize(function () {
-			console.log('resize');
 			resizeScreen();
-			// call to update border boxes here
 		});
 
 		resizeScreen();
@@ -30,7 +28,6 @@ class Game extends Phaser.Scene {
 
 		// matter physics by mika
     this.graphics = this.add.graphics(); // only to draw the grid
-    this.matter.world.setBounds(0, 0, 800, 600);
 
     this.add
       .text(
@@ -115,6 +112,7 @@ class Game extends Phaser.Scene {
 	// https://github.com/nathanaltice/CameraLucida/blob/master/src/scenes/FixedController.js
 	update() {
 		this.updateScreenLocation();
+		this.updateWorldBounds();
 		// https://www.w3schools.com/jsref/prop_win_screentop.asp
 		// console.log(`
 		//     top: ${window.screenTop}
@@ -130,6 +128,10 @@ class Game extends Phaser.Scene {
 	}
 	updateSize() {
 		this.text.setText(`GAME WINDOW IS ${game.config.width} x ${game.config.height}`);
+		this.updateWorldBounds();
+	}
+	updateWorldBounds() {
+		this.matter.world.setBounds(window.screenLeft, window.screenTop, game.config.width, game.config.height);
 	}
 
 	// helper functions for matter
