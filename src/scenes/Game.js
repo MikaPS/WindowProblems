@@ -1,49 +1,53 @@
 class Game extends Phaser.Scene {
-	constructor() {
-		super('gameScene')
-	}
+  constructor() {
+    super("gameScene");
+  }
 
-	preload() {
-		this.load.image('background', 'assets/img/sample.jpg');
-	}
+  preload() {
+    this.load.image("background", "assets/img/sample.jpg");
+  }
 
-	create() {
-		// window physics by lyssa
-		game.settings = { centerX: 0, centerY: 0 };  // for centering camera later
-		this.add.image(0, 0, 'background').setOrigin(0);  // sample background image
-		this.text = this.add.text(game.config.width / 2, game.config.height / 2, `GAME WINDOW IS ${game.config.width} x ${game.config.height}`, { fill: '#ffffff' })
-			.setOrigin(0.5);
-
-		let resizeScreen = () => {
-			game.config.width = $('#game').width();
-			game.config.height = $('#game').height();
-			this.updateSize.bind(this)();
-		};
-		$(window).resize(function () {
-			resizeScreen();
-		});
-
-		resizeScreen();
-		this.updateScreenLocation();
-
-		// matter physics by mika
-    this.graphics = this.add.graphics(); // only to draw the grid
-
-    this.add
+  create() {
+    // window physics by lyssa
+    game.settings = { centerX: 0, centerY: 0 }; // for centering camera later
+    this.add.image(0, 0, "background").setOrigin(0); // sample background image
+    this.text = this.add
       .text(
-        400,
-        50,
-        "Right-click next to objects for explosion.\nLeft click the object on the spring to throw it."
+        game.config.width / 2,
+        game.config.height / 2,
+        `GAME WINDOW IS ${game.config.width} x ${game.config.height}`,
+        { fill: "#ffffff" }
       )
       .setOrigin(0.5);
 
-    // adding random boxes to the scene
-    let box1 = this.matter.add.rectangle(300, 450, 50, 50);
-    let box2 = this.matter.add.rectangle(500, 450, 50, 50);
-    this.ground = this.matter.add.rectangle(395, 600, 815, 50, {
-      isStatic: true,
-      render: { fillStyle: "#060a19" },
+    let resizeScreen = () => {
+      game.config.width = $("#game").width();
+      game.config.height = $("#game").height();
+      this.updateSize.bind(this)();
+    };
+    $(window).resize(function () {
+      console.log("resize");
+      resizeScreen();
+      // call to update border boxes here
     });
+
+    resizeScreen();
+    this.updateScreenLocation();
+
+    // matter physics by mika
+    this.graphics = this.add.graphics(); // only to draw the grid
+
+    // this.add
+    //   .text(
+    //     400,
+    //     50,
+    //     "Right-click next to objects for explosion.\nLeft click the object on the spring to throw it."
+    //   )
+    //   .setOrigin(0.5);
+
+    // adding random boxes to the scene
+    // let box1 = this.matter.add.rectangle(300, 450, 50, 50);
+    // let box2 = this.matter.add.rectangle(500, 450, 50, 50);
 
     // mouse movements
     this.matter.add.mouseSpring();
@@ -53,8 +57,13 @@ class Game extends Phaser.Scene {
       "pointerdown",
       function (pointer, event) {
         if (pointer.leftButtonDown()) {
-          this.crashingObjects(800, 600);
-          this.airDropObjects(800, 600);
+          this.crashingObjects(game.config.width, game.config.height);
+          this.airDropObjects(
+            window.screenLeft,
+            window.screenLeft + game.config.width,
+            window.screenTop,
+            window.screenTop + game.config.height,
+          );
         }
       },
       this
@@ -104,10 +113,9 @@ class Game extends Phaser.Scene {
       },
       this
     );
-	}
+  }
 
-	init() {
-	}
+  init() {}
 
 	// https://github.com/nathanaltice/CameraLucida/blob/master/src/scenes/FixedController.js
 	update() {
@@ -134,13 +142,15 @@ class Game extends Phaser.Scene {
 		this.matter.world.setBounds(window.screenLeft, window.screenTop, game.config.width, game.config.height);
 	}
 
-	// helper functions for matter
-  airDropObjects(maxX, maxY) {
-    let x = Math.random() * maxX;
-    let y = Math.random() * maxY;
+  // helper functions for matter
+  airDropObjects(startX, endX, startY, endY) {
     let side = Math.random() * 8;
-    this.matter.add.polygon(x, y, side, maxX * 0.03 + maxY * 0.03);
+    let size = game.config.width / 50 + game.config.height / 50;
+    let x = Math.random() * (endX - startX) + startX;
+    let y = Math.random() * (endY - startY) + startY;
+    this.matter.add.polygon(x, y, side, size);
   }
+
   crashingObjects(maxX, maxY) {
     let gridSize = 4;
     let maxAllowed = 3;
@@ -151,12 +161,12 @@ class Game extends Phaser.Scene {
     for (let i = 0; i < gridSize; i++) {
       for (let j = 0; j < gridSize; j++) {
         // draws the grid (FOR DEBUGGING)
-        this.graphics.strokeRect(
-          areaWidth * i,
-          areaHeight * j,
-          areaWidth,
-          areaHeight
-        );
+        // this.graphics.strokeRect(
+        //   areaWidth * i,
+        //   areaHeight * j,
+        //   areaWidth,
+        //   areaHeight
+        // );
 
         let count = 0;
 
@@ -197,5 +207,4 @@ class Game extends Phaser.Scene {
     }
     return false;
   }
-
 }
