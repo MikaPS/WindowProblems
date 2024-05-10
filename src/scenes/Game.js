@@ -30,7 +30,7 @@ class Game extends Phaser.Scene {
     });
     */
     // window physics by lyssa
-    game.settings = { centerX: 0, centerY: 0 }; // for centering camera later
+    game.settings = { centerX: 0, centerY: 0, cache: { x: 0, y: 0 } }; // for centering camera later
     this.add.image(0, 0, "background").setOrigin(0); // sample background image
     this.text = this.add
       .text(
@@ -57,7 +57,7 @@ class Game extends Phaser.Scene {
 
     // matter physics by mika
     this.graphics = this.add.graphics(); // only to draw the grid
-
+    // this.objectsGroup = this.add.group();
     // this.add
     //   .text(
     //     400,
@@ -69,6 +69,42 @@ class Game extends Phaser.Scene {
     // adding random boxes to the scene
     // let box1 = this.matter.add.rectangle(300, 450, 50, 50);
     // let box2 = this.matter.add.rectangle(500, 450, 50, 50);
+
+    this.matter.world.on("collisionstart", (event, bodyA, bodyB) => {
+      // bodyA.gameObject.setTint(0xff0000);
+      // bodyB.gameObject.setTint(0x00ff00);
+      // console.log("collision: ", bodyA.label, bodyB.label);
+      if (bodyA.label != "Rectangle Body" && bodyB.label != "Rectangle Body") {
+        // console.log("actual coliision", bodyA.label, bodyB.label);
+        // find the correct direction for explosion
+        let directionX = bodyA.position.x - bodyB.position.x;
+        let directionY = bodyA.position.y - bodyB.position.y;
+        console.log(bodyA.position, bodyB.position);
+        if (directionX < 0) {
+          directionX = -0.1;
+        } else {
+          directionX = 0.1;
+        }
+        if (directionY < 0) {
+          directionY = -0.1;
+        } else {
+          directionY = 0.1;
+        }
+        // Apply force to the body
+        let magnitude = 1000;
+        this.matter.applyForce(bodyB, {
+          x: directionX * magnitude,
+          y: directionY * magnitude,
+        });
+        console.log("force: ", directionX * magnitude, directionY * magnitude);
+        // this.matter.applyForce(bodyB, {
+        //   x: directionX * magnitude,
+        //   y: directionY * magnitude,
+        // });
+        // this.matter.world.remove(bodyA);
+        // this.matter.world.remove(bodyB);
+      }
+    });
 
     // mouse movements
     this.matter.add.mouseSpring();
@@ -83,7 +119,7 @@ class Game extends Phaser.Scene {
             window.screenLeft,
             window.screenLeft + game.config.width,
             window.screenTop,
-            window.screenTop + game.config.height,
+            window.screenTop + game.config.height
           );
         }
       },
@@ -139,30 +175,46 @@ class Game extends Phaser.Scene {
 
   init() {}
 
-	// https://github.com/nathanaltice/CameraLucida/blob/master/src/scenes/FixedController.js
-	update() {
-		this.updateScreenLocation();
-		this.updateWorldBounds();
-		// https://www.w3schools.com/jsref/prop_win_screentop.asp
-		// console.log(`
-		//     top: ${window.screenTop}
-		//     left: ${window.screenLeft}
-		// `);
-	}
+  // https://github.com/nathanaltice/CameraLucida/blob/master/src/scenes/FixedController.js
+  update() {
+    this.updateScreenLocation();
+    // https://www.w3schools.com/jsref/prop_win_screentop.asp
+    // console.log(`
+    //     top: ${window.screenTop}
+    //     left: ${window.screenLeft}
+    // `);
+  }
 
-	// helper functions for window
-	updateScreenLocation() {
-		game.settings.centerX = game.config.width / 2 + window.screenX;
-		game.settings.centerY = game.config.height / 2 + window.screenY;
-		this.cameras.main.centerOn(game.settings.centerX, game.settings.centerY);
-	}
-	updateSize() {
-		this.text.setText(`GAME WINDOW IS ${game.config.width} x ${game.config.height}`);
-		this.updateWorldBounds();
-	}
-	updateWorldBounds() {
-		this.matter.world.setBounds(window.screenLeft, window.screenTop, game.config.width, game.config.height);
-	}
+  // helper functions for window
+  updateScreenLocation() {
+    if (
+      game.settings.cache.x !== window.screenX &&
+      game.settings.cache.y !== window.screenY
+    ) {
+      console.log("screen moved");
+      console.log(game.settings.cache, window.screenX, window.screenY);
+      game.settings.cache = { x: window.screenX, y: window.screenY };
+      game.settings.centerX = game.config.width / 2 + window.screenX;
+      game.settings.centerY = game.config.height / 2 + window.screenY;
+      this.cameras.main.centerOn(game.settings.centerX, game.settings.centerY);
+      this.updateWorldBounds();
+    }
+  }
+  updateSize() {
+    this.text.setText(
+      `GAME WINDOW IS ${game.config.width} x ${game.config.height}`
+    );
+    this.updateWorldBounds();
+  }
+  updateWorldBounds() {
+    this.matter.world.setBounds(
+      window.screenLeft,
+      window.screenTop,
+      game.config.width,
+      game.config.height,
+      1000
+    );
+  }
 
   // helper functions for matter
   airDropObjects(startX, endX, startY, endY) {
@@ -176,62 +228,71 @@ class Game extends Phaser.Scene {
         lineWidth: 4
       }
     }*/);
+    // this.objectsGroup.add(this.b);
+    // this.objectsGroup.forEach(function (item) {
+    //   console.log("objects: ", item);
+    // });
   }
 
-  crashingObjects(maxX, maxY) {
-    let gridSize = 4;
-    let maxAllowed = 3;
-    let areaWidth = maxX / gridSize;
-    let areaHeight = maxY / gridSize;
-
-    // go through each grid cell
-    for (let i = 0; i < gridSize; i++) {
-      for (let j = 0; j < gridSize; j++) {
-        // draws the grid (FOR DEBUGGING)
-        // this.graphics.strokeRect(
-        //   areaWidth * i,
-        //   areaHeight * j,
-        //   areaWidth,
-        //   areaHeight
-        // );
-
-        let count = 0;
-
-        // go through all bodies in the world
-        for (let k = 0; k < this.matter.world.localWorld.bodies.length; k++) {
-          let body = this.matter.world.localWorld.bodies[k];
-          // check if it's in a specific area and add it to a count
-          if (
-            body.position.x > areaWidth * i &&
-            body.position.x < areaWidth * i + areaWidth &&
-            body.position.y > areaHeight * j &&
-            body.position.y < areaHeight * j + areaHeight
-          ) {
-            count++;
-          }
-        }
-
-        // check if there are too many bodies
-        if (count >= maxAllowed) {
-          for (let k = 0; k < this.matter.world.localWorld.bodies.length; k++) {
-            let body = this.matter.world.localWorld.bodies[k];
-            // delete all the over crowding bodies
-            if (
-              body.position.x > areaWidth * i &&
-              body.position.x < areaWidth * i + areaWidth &&
-              body.position.y > areaHeight * j &&
-              body.position.y < areaHeight * j + areaHeight
-            ) {
-              if (body != this.ground) {
-                this.matter.world.remove(body);
-              }
-            }
-          }
-
-          return true;
-        }
-      }
-    }
-    return false;
+  crashingObjects(startX, endX, startY, endY) {
+    // for (let k = 0; k < this.matter.world.localWorld.bodies.length; k++) {
+    //   for (let k = 0; k < this.matter.world.localWorld.bodies.length; k++) {
+    //   }
+    // }
   }
+  //   let gridSize = 4;
+  //   let maxAllowed = 3;
+  //   let areaWidth = maxX / gridSize;
+  //   let areaHeight = maxY / gridSize;
+
+  //   // go through each grid cell
+  //   for (let i = 0; i < gridSize; i++) {
+  //     for (let j = 0; j < gridSize; j++) {
+  //       // draws the grid (FOR DEBUGGING)
+  //       this.graphics.strokeRect(
+  //         areaWidth * i,
+  //         areaHeight * j,
+  //         areaWidth,
+  //         areaHeight
+  //       );
+
+  //       let count = 0;
+
+  //       // go through all bodies in the world
+  //       for (let k = 0; k < this.matter.world.localWorld.bodies.length; k++) {
+  //         let body = this.matter.world.localWorld.bodies[k];
+  //         // check if it's in a specific area and add it to a count
+  //         if (
+  //           body.position.x > areaWidth * i &&
+  //           body.position.x < areaWidth * i + areaWidth &&
+  //           body.position.y > areaHeight * j &&
+  //           body.position.y < areaHeight * j + areaHeight
+  //         ) {
+  //           count++;
+  //         }
+  //       }
+
+  //       // check if there are too many bodies
+  //       if (count >= maxAllowed) {
+  //         for (let k = 0; k < this.matter.world.localWorld.bodies.length; k++) {
+  //           let body = this.matter.world.localWorld.bodies[k];
+  //           // delete all the over crowding bodies
+  //           if (
+  //             body.position.x > areaWidth * i &&
+  //             body.position.x < areaWidth * i + areaWidth &&
+  //             body.position.y > areaHeight * j &&
+  //             body.position.y < areaHeight * j + areaHeight
+  //           ) {
+  //             if (body != this.ground) {
+  //               this.matter.world.remove(body);
+  //             }
+  //           }
+  //         }
+
+  //         return true;
+  //       }
+  //     }
+  //   }
+  //   return false;
+  // }
 }
