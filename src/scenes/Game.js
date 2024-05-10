@@ -64,6 +64,7 @@ class Game extends Phaser.Scene {
     );
 
     // RIGHT CLICK FOR EXPLOSIONS
+    this.input.mouse.disableContextMenu();
     this.input.on(
       "pointerdown",
       function (pointer) {
