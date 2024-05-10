@@ -9,7 +9,7 @@ class Game extends Phaser.Scene {
 
   create() {
     // window physics by lyssa
-    game.settings = { centerX: 0, centerY: 0 }; // for centering camera later
+    game.settings = { centerX: 0, centerY: 0, cache: { x: 0, y: 0 } }; // for centering camera later
     this.add.image(0, 0, "background").setOrigin(0); // sample background image
     this.text = this.add
       .text(
@@ -121,7 +121,6 @@ class Game extends Phaser.Scene {
 	// https://github.com/nathanaltice/CameraLucida/blob/master/src/scenes/FixedController.js
 	update() {
 		this.updateScreenLocation();
-		this.updateWorldBounds();
 		// https://www.w3schools.com/jsref/prop_win_screentop.asp
 		// console.log(`
 		//     top: ${window.screenTop}
@@ -131,16 +130,22 @@ class Game extends Phaser.Scene {
 
 	// helper functions for window
 	updateScreenLocation() {
-		game.settings.centerX = game.config.width / 2 + window.screenX;
-		game.settings.centerY = game.config.height / 2 + window.screenY;
-		this.cameras.main.centerOn(game.settings.centerX, game.settings.centerY);
+    if (game.settings.cache.x !== window.screenX  && game.settings.cache.y !== window.screenY){
+      console.log("screen moved");
+      console.log(game.settings.cache, window.screenX, window.screenY);
+      game.settings.cache = {x: window.screenX, y: window.screenY};
+      game.settings.centerX = game.config.width / 2 + window.screenX;
+      game.settings.centerY = game.config.height / 2 + window.screenY;
+      this.cameras.main.centerOn(game.settings.centerX, game.settings.centerY);
+      this.updateWorldBounds();
+    }
 	}
 	updateSize() {
 		this.text.setText(`GAME WINDOW IS ${game.config.width} x ${game.config.height}`);
 		this.updateWorldBounds();
 	}
 	updateWorldBounds() {
-		this.matter.world.setBounds(window.screenLeft, window.screenTop, game.config.width, game.config.height);
+		this.matter.world.setBounds(window.screenLeft, window.screenTop, game.config.width, game.config.height, 1000);
 	}
 
   // helper functions for matter
