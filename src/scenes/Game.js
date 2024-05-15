@@ -151,8 +151,8 @@ class Game extends Phaser.Scene {
   }
   updateWorldBounds() {
     this.matter.world.setBounds(
-      window.screenLeft,
-      window.screenTop,
+      game.settings.cache.x,
+      game.settings.cache.y,
       game.config.width,
       game.config.height,
       1000
