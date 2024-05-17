@@ -6,9 +6,21 @@ class Game extends Phaser.Scene {
   preload() {
     //Used from https://www.deviantart.com/rawen713/art/Graph-Paper-150326645
     this.load.image("background", "assets/img/graphpaper_background.jpg");
+
+    this.load.audio("paper1", "assets/sound/106127__j1987__crumple.wav");
+    this.load.audio("paper2", "assets/sound/508597__drooler__crumple-06.ogg");
+    this.load.audio("paper3", "assets/sound/540262__zepurple__uncrumpling-paper.wav");
+    this.load.audio("destruction", "assets/sound/641486__duskbreaker__8bit-explosion.wav");
+    this.load.audio("spawn", "assets/sound/476840__jackyyang09__paper-scrawling.wav");
   }
 
   create() {
+    this.P_sound = false;
+    this.paper1 = this.sound.add("paper1");
+    this.paper2 = this.sound.add("paper2");
+    this.paper3 = this.sound.add("paper3");
+    this.destruction = this.sound.add("destruction");
+    this.spawn = this.sound.add("spawn");
     // window physics by lyssa
     game.settings = { centerX: 0, centerY: 0, cache: { x: 0, y: 0 } }; // for centering camera later
     this.add.image(0, 0, "background").setOrigin(0); // sample background image
@@ -74,6 +86,7 @@ class Game extends Phaser.Scene {
             window.screenTop,
             window.screenTop + game.config.height
           );
+          this.spawn.play();
         }
       },
       this
@@ -120,6 +133,11 @@ class Game extends Phaser.Scene {
     //     top: ${window.screenTop}
     //     left: ${window.screenLeft}
     // `);
+    if(this.paper1.isPlaying || this.paper2.isPlaying || this.paper3.isPlaying){
+      this.P_sound = true;
+    } else {
+      this.P_sound = false;
+    }
   }
 
   // Updated chaos score
@@ -150,6 +168,14 @@ class Game extends Phaser.Scene {
     this.updateWorldBounds();
   }
   updateWorldBounds() {
+    var i = Phaser.Math.Between(1, 3);
+    if(i == 1 && this.P_sound == false){
+      this.paper1.play();
+    } else if(i == 2 && this.P_sound == false){
+      this.paper2.play();
+    } else if (i == 3 && this.P_sound == false){
+      this.paper3.play();
+    }
     this.matter.world.setBounds(
       game.settings.cache.x,
       game.settings.cache.y,
@@ -202,6 +228,7 @@ class Game extends Phaser.Scene {
         if (this.updated == false) {
           this.updated = true;
           this.explodedObjects += 1;
+          this.destruction.play();
         }
       }, 2000);
     }, 50);
