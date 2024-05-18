@@ -12,6 +12,13 @@ class Game extends Phaser.Scene {
     this.load.audio("paper3", "assets/sound/540262__zepurple__uncrumpling-paper.wav");
     this.load.audio("destruction", "assets/sound/641486__duskbreaker__8bit-explosion.wav");
     this.load.audio("spawn", "assets/sound/476840__jackyyang09__paper-scrawling.wav");
+
+    // font https://www.dafont.com/handwriting-17.font
+    this.load.bitmapFont(
+      "font",
+      "assets/font/handwriting.png",
+      "assets/font/handwriting.xml"
+    );
   }
 
   create() {
@@ -21,41 +28,31 @@ class Game extends Phaser.Scene {
     this.paper3 = this.sound.add("paper3");
     this.destruction = this.sound.add("destruction");
     this.spawn = this.sound.add("spawn");
-    // window physics by lyssa
+
+    // for window physics later
     game.settings = { centerX: 0, centerY: 0, cache: { x: 0, y: 0 } }; // for centering camera later
     this.add.image(0, 0, "background").setOrigin(0); // sample background image
-    this.text = this.add
-      .text(
-        game.config.width / 2,
-        game.config.height / 2,
-        `GAME WINDOW IS ${game.config.width} x ${game.config.height}`,
-        { fill: "#ffffff" }
-      )
-      .setOrigin(0.5);
-
-    let resizeScreen = () => {
-      game.config.width = $("#game").width();
-      game.config.height = $("#game").height();
-      this.updateSize.bind(this)();
-    };
-    $(window).resize(function () {
-      console.log("resize");
-      resizeScreen();
-      // call to update border boxes here
-    });
-
-    resizeScreen();
-    this.updateScreenLocation();
+    this.counter = 0;
 
     // matter physics by mika
     // Chaos score text
     this.explodedObjects = 0;
-    this.explodedText = this.add.text(
+    this.explodedText = this.add.bitmapText(
       game.config.width * 0.85,
       game.config.height * 0.05,
-      "Chaos Score:\n" + this.explodedObjects
+      "font",
+      "CHAOS SCORE:\n" + this.explodedObjects,
+      24,
     );
-    this.explodedText.setColor("#000000");
+
+    this.objSpawnText = this.add.bitmapText(  // default offscreen
+      -200,
+      -200,
+      "font",
+      "SPAWNING\n OBJECTS",
+      36,
+    ).setOrigin(0.5).setDepth(5);
+
     // Explosion when two objects collide
     this.matter.world.on("collisionstart", (event) => {
       event.pairs.forEach((pair) => {
@@ -70,6 +67,19 @@ class Game extends Phaser.Scene {
         }
       });
     });
+
+    // window physics
+    let resizeScreen = () => {
+      game.config.width = $("#game").width();
+      game.config.height = $("#game").height();
+      this.updateSize.bind(this)();
+    };
+    $(window).resize(function () {
+      resizeScreen();
+    });
+
+    resizeScreen();
+    this.updateScreenLocation();
 
     // mouse movements
     this.matter.add.mouseSpring();
@@ -125,8 +135,7 @@ class Game extends Phaser.Scene {
   // https://github.com/nathanaltice/CameraLucida/blob/master/src/scenes/FixedController.js
   update() {
     this.updateScreenLocation();
-    this.updateTextLocation();
-    this.explodedText.text = "Chaos Score:\n" + this.explodedObjects;
+    this.explodedText.text = "CHAOS SCORE:\n" + this.explodedObjects;
 
     // https://www.w3schools.com/jsref/prop_win_screentop.asp
     // console.log(`
@@ -140,31 +149,49 @@ class Game extends Phaser.Scene {
     }
   }
 
-  // Updated chaos score
-  updateTextLocation() {
-    this.explodedText.x = game.config.width * 0.85;
-    this.explodedText.y = game.config.height * 0.05;
-  }
-
   // helper functions for window
   updateScreenLocation() {
     if (
       game.settings.cache.x !== window.screenX &&
       game.settings.cache.y !== window.screenY
     ) {
-      // console.log("screen moved");
-      // console.log(game.settings.cache, window.screenX, window.screenY);
+      // update text location
+      this.explodedText.x = window.screenX + 10;
+      this.explodedText.y = window.screenY + 10;
+      // update cache
       game.settings.cache = { x: window.screenX, y: window.screenY };
       game.settings.centerX = game.config.width / 2 + window.screenX;
       game.settings.centerY = game.config.height / 2 + window.screenY;
       this.cameras.main.centerOn(game.settings.centerX, game.settings.centerY);
       this.updateWorldBounds();
     }
+
+    // object spawn
+    const left = window.screenLeft < 10;
+    const right = window.screenLeft + game.config.width > window.screen.width - 10;
+    const top = window.screenTop < 40;
+    const bot = window.screenTop + game.config.height > window.screen.height - 120;
+    if ((top && right) ||
+        (top && left) ||
+        (bot && right) ||
+        (bot && left)) {
+      this.objSpawnText.x = game.settings.centerX;
+      this.objSpawnText.y = game.settings.centerY;
+      if (!(this.counter++ % 8)) {
+        this.airDropObjects(
+          window.screenLeft,
+          window.screenLeft + game.config.width,
+          window.screenTop,
+          window.screenTop + game.config.height
+        );
+        this.spawn.play();
+      }
+    } else {
+      this.objSpawnText.x = -200;
+      this.objSpawnText.y = -200;
+    }
   }
   updateSize() {
-    this.text.setText(
-      `GAME WINDOW IS ${game.config.width} x ${game.config.height}`
-    );
     this.updateWorldBounds();
   }
   updateWorldBounds() {
