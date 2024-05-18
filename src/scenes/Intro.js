@@ -68,11 +68,14 @@ class Intro extends Phaser.Scene {
       "----------\n| START |\n----------",
       52
     );
+
+    console.log(game.settings.cache.x + game.config.width);
   }
 
   update() {
     if (
-      game.settings.cache.x >= this.originalW * 0.3 &&
+      (game.settings.cache.x >= this.originalW * 0.3 ||
+        game.settings.cache.x + game.config.width >= this.originalW * 0.7) &&
       game.settings.cache.y >= this.originalH * 0.7
     ) {
       setTimeout(() => {
